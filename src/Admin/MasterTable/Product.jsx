@@ -157,9 +157,9 @@ export default function ItemMaster() {
       <Col span={6}>
         <Form.Item label="Type" name="type">
           <Select placeholder="Select Type" disabled={disabled}>
-            <Option value="OIL">Oil</Option>
-            <Option value="FOOD">Food</Option>
-            <Option value="SPICE">Spice</Option>
+            <Option value="TIN">Oil</Option>
+            <Option value="pouch">Food</Option>
+            <Option value="Sachet">Spice</Option>
             <Option value="OTHER">Other</Option>
           </Select>
         </Form.Item>

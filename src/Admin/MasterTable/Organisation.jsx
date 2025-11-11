@@ -43,8 +43,8 @@ const initialData = [
     contPerson: "KOUSHAL KISHORE AGRAWAL",
     faxNo: "2314550",
     tinNo: "04/06/1",
-    etDate: "16/08/2025", // String date
-    cstDate: "16/08/2025", // String date
+    etDate: "16/08/2025", 
+    cstDate: "16/08/2025", 
     tanNo: "21AAVC...",
     panNo: "ABCDE1234F",
     eolNo: "",

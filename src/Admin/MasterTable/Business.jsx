@@ -9,7 +9,7 @@ import {
   Row,
   Col,
   Card,
-  DatePicker
+  DatePicker,
 } from "antd";
 import {
   SearchOutlined,
@@ -21,7 +21,20 @@ import {
   MinusCircleOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
+
 const { Option } = Select;
+const parseDateFields = (record) => {
+  const dateFields = ["tinDate", "etDate", "cstDate"];
+  const newRecord = { ...record };
+  dateFields.forEach((field) => {
+    if (newRecord[field]) {
+       newRecord[field] = dayjs(newRecord[field], "DD:MM:YYYY").isValid()
+        ? dayjs(newRecord[field], "DD:MM:YYYY")
+        : null;
+    }
+  });
+  return newRecord;
+};
 
 const businessDataJSON = [
   {
@@ -35,25 +48,37 @@ const businessDataJSON = [
     phoneNo: "9876543210",
     contactPerson: "Rajesh Kumar",
     status: "Active",
+    licenseNo: "5567",
+       country: "India",
+    state: "Maharashtra",
+    district: "Mumbai",
+    city: "Mumbai",
+    pinCode: "400001",
+    location: "Market Street",
+    type: "Customer",
+    mobileNo: "9876543210",
+    creditFacility: "Credit Limit",
+    securityForCreditFacility: "Bank Guarantee",
   },
   {
     key: 2,
     partnerType: "Vendor",
     shortName: "RSI",
     name: "RUCHI SOYA INDUSTRIES LIMITED",
-    address: "201, MAHAKOSH HOUSE, 7/5, SOUTH TUKOGANJ, NATH MANDIR ROAD, INDORE-452001",
+    address:
+      "201, MAHAKOSH HOUSE, 7/5, SOUTH TUKOGANJ, NATH MANDIR ROAD, INDORE-452001",
     phoneNo: "0731-4056012,2513281,82/83,4071109",
     faxNo: "4056019",
-     tinNo: "4056019",
-      tinDate: "10:01:2025",
-       panNo: "4056019",
-        gstIn: "4056019",
-         etno: "4056019",
-          etDate: "10:01:2025",
-           cstNo: "4056019",
-            cstDate: "10:01:2025",
-             tradeNo: "4056019",
-             websiteUrl:"http://localhost:3000/login",
+    tinNo: "4056019",
+    tinDate: "10:01:2025", 
+    panNo: "4056019",
+    gstIn: "4056019",
+    etno: "4056019",
+    etDate: "10:01:2025", 
+    cstNo: "4056019",
+    cstDate: "10:01:2025", 
+    tradeNo: "4056019",
+    websiteUrl: "http://localhost:3000/login",
     email: "manoj_padtar@gmail.com",
     transactionType: "Super Stockist",
     tranStatus: "Inside",
@@ -61,6 +86,9 @@ const businessDataJSON = [
     state: "Madhya Pradesh",
     location: "Indore",
     status: "Active",
+    district: "Indore",
+    city: "Indore",
+    pinCode: "452001",
     plants: [
       {
         plantName: "Indore Plant",
@@ -69,29 +97,34 @@ const businessDataJSON = [
         email: "indoreplant@ruchi.com",
         state: "Madhya Pradesh",
         faxNo: "1234",
+        district: "Indore",
+        city: "Indore",
+        pin: "452001",
       },
     ],
   },
-];
+].map((record) => parseDateFields(record));
 
 export default function Business() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [searchText, setSearchText] = useState("");
-  const [activeForm, setActiveForm] = useState("Customer");
+  const [activeForm, setActiveForm] = useState("Customer"); 
 
   const [form] = Form.useForm();
   const [viewForm] = Form.useForm();
   const [data, setData] = useState(businessDataJSON);
 
- useEffect(() => {
+  useEffect(() => {
     if (isEditModalOpen && selectedRecord) {
-      form.setFieldsValue(selectedRecord);
+        const recordWithParsedDates = parseDateFields(selectedRecord);
+      form.setFieldsValue(recordWithParsedDates);
     } else if (isViewModalOpen && selectedRecord) {
-      viewForm.setFieldsValue(selectedRecord);
+          const recordWithParsedDates = parseDateFields(selectedRecord);
+      viewForm.setFieldsValue(recordWithParsedDates);
     } else if (isEditModalOpen && !selectedRecord) {
-       form.resetFields();
+      form.resetFields();
     }
   }, [isEditModalOpen, isViewModalOpen, selectedRecord, activeForm, form, viewForm]);
 
@@ -153,6 +186,7 @@ export default function Business() {
     },
     {
       title: <span className="text-amber-700 font-semibold">Actions</span>,
+      width: 100,
       render: (record) => (
         <div className="flex gap-3">
           <EyeOutlined
@@ -160,8 +194,7 @@ export default function Business() {
             onClick={() => {
               setSelectedRecord(record);
               setActiveForm(record.partnerType);
-              viewForm.setFieldsValue(record);
-              setIsViewModalOpen(true);
+               setIsViewModalOpen(true);
             }}
           />
           <EditOutlined
@@ -169,8 +202,7 @@ export default function Business() {
             onClick={() => {
               setSelectedRecord(record);
               setActiveForm(record.partnerType);
-                form.setFieldsValue(record);
-              setIsEditModalOpen(true);
+                setIsEditModalOpen(true);
             }}
           />
         </div>
@@ -180,32 +212,42 @@ export default function Business() {
 
   // ================= Handle Save =================
   const handleSave = (values) => {
+     const formattedValues = { ...values };
+    const dateFields = ["tinDate", "etDate", "cstDate"];
+    dateFields.forEach((field) => {
+      if (formattedValues[field] && dayjs.isDayjs(formattedValues[field])) {
+        formattedValues[field] = formattedValues[field].format("DD:MM:YYYY");
+      }
+    });
+
     const finalValues = {
-      ...values,
+      ...formattedValues,
       partnerType: activeForm,
-      name: activeForm === "Customer" ? values.name : values.name, 
+       name: values.name || values.compName || "N/A",
     };
 
     if (selectedRecord) {
+      // Edit logic
       setData((prev) =>
         prev.map((item) =>
           item.key === selectedRecord.key
-            ? { ...item, ...finalValues } 
-            : item
+            ? { ...item, ...finalValues }     : item
         )
       );
     } else {
-         setData((prev) => [
+      // Add logic
+      setData((prev) => [
         ...prev,
         { key: prev.length + 1, ...finalValues },
       ]);
     }
 
     setIsEditModalOpen(false);
-     };
+  };
 
   const filteredData = data.filter(
     (item) =>
+      item.partnerType === activeForm &&
       (item.name || item.compName)?.toLowerCase().includes(searchText.toLowerCase()) ||
       item.email?.toLowerCase().includes(searchText.toLowerCase())
   );
@@ -213,7 +255,7 @@ export default function Business() {
   // ================= Customer Form =================
   const renderCustomerForm = (disabled = false) => (
     <>
-       <h3 className="text-lg font-semibold text-amber-700 mb-2">
+      <h3 className="text-lg font-semibold text-amber-700 mb-2">
         Customer Details
       </h3>
 
@@ -239,7 +281,11 @@ export default function Business() {
             <Input disabled={disabled} placeholder="Enter Broker Name" />
           </Form.Item>
         </Col>
-
+        <Col span={4}>
+          <Form.Item label="Phone No" name="phoneNo">
+            <Input disabled={disabled} placeholder="Enter Phone Number" />
+          </Form.Item>
+        </Col>
         <Col span={4}>
           <Form.Item label="Address" name="address">
             <Input.TextArea
@@ -251,8 +297,8 @@ export default function Business() {
         </Col>
 
         <Col span={4}>
-          <Form.Item label="City" name="city">
-            <Input disabled={disabled} placeholder="Enter City" />
+          <Form.Item label="Country" name="country">
+            <Input disabled={disabled} placeholder="Enter Country" />
           </Form.Item>
         </Col>
 
@@ -261,16 +307,20 @@ export default function Business() {
             <Input disabled={disabled} placeholder="Enter State" />
           </Form.Item>
         </Col>
-
         <Col span={4}>
-          <Form.Item label="Pin Code" name="pinCode">
-            <Input disabled={disabled} placeholder="Enter Pin Code" />
+          <Form.Item label="District" name="district">
+            <Input disabled={disabled} placeholder="Enter District" />
+          </Form.Item>
+        </Col>
+        <Col span={4}>
+          <Form.Item label="City" name="city">
+            <Input disabled={disabled} placeholder="Enter City" />
           </Form.Item>
         </Col>
 
         <Col span={4}>
-          <Form.Item label="Country" name="country">
-            <Input disabled={disabled} placeholder="Enter Country" />
+          <Form.Item label="Pin Code" name="pinCode">
+            <Input disabled={disabled} placeholder="Enter Pin Code" />
           </Form.Item>
         </Col>
 
@@ -318,11 +368,6 @@ export default function Business() {
         </Col>
 
         <Col span={4}>
-          <Form.Item label="Phone No" name="phoneNo">
-            <Input disabled={disabled} placeholder="Enter Phone Number" />
-          </Form.Item>
-        </Col>
-        <Col span={4}>
           <Form.Item label="Credit Facility" name="creditFacility">
             <Select disabled={disabled} placeholder="Select Credit Facility">
               <Option value="Advance">Advance</Option>
@@ -333,7 +378,7 @@ export default function Business() {
           </Form.Item>
         </Col>
 
-        <Col span={6}>   
+        <Col span={6}>
           <Form.Item
             label="Security for Credit Facility"
             name="securityForCreditFacility"
@@ -411,7 +456,7 @@ export default function Business() {
         </Col>
 
         <Col span={4}>
-          <Form.Item label="Edible Oil Lic. No" name="edibleOilLicNo">
+          <Form.Item label="License No" name="licenseNo">
             <Input disabled={disabled} placeholder="Enter License No" />
           </Form.Item>
         </Col>
@@ -457,12 +502,20 @@ export default function Business() {
       </h3>
       <Row gutter={24}>
         <Col span={4}>
-          <Form.Item label="Short Name" name="shortName" rules={[{ required: true }]}>
+          <Form.Item
+            label="Short Name"
+            name="shortName"
+            rules={[{ required: true, message: "Please enter short name" }]}
+          >
             <Input disabled={disabled} className="border-amber-400" />
           </Form.Item>
         </Col>
         <Col span={4}>
-          <Form.Item label="Company Name" name="name" rules={[{ required: true }]}>
+          <Form.Item
+            label="Company Name"
+            name="name"
+            rules={[{ required: true, message: "Please enter company name" }]}
+          >
             <Input disabled={disabled} className="border-amber-400" />
           </Form.Item>
         </Col>
@@ -481,63 +534,66 @@ export default function Business() {
             <Input disabled={disabled} className="border-amber-400" />
           </Form.Item>
         </Col>
-          <Col span={4}>
+        <Col span={4}>
           <Form.Item label="Tin No" name="tinNo">
             <Input disabled={disabled} className="border-amber-400" />
           </Form.Item>
         </Col>
-          <Col span={4}>
+        <Col span={4}>
           <Form.Item label="Tin Date" name="tinDate">
-           <DatePicker
-          className="w-full"
-          disabledDate={(current) => current && current < dayjs().startOf("day")}
-        />  </Form.Item>
+            <DatePicker
+              className="w-full"
+              disabled={disabled}
+              format="DD:MM:YYYY" />{" "}
+          </Form.Item>
         </Col>
-          <Col span={4}>
+        <Col span={4}>
           <Form.Item label="PAN No" name="panNo">
             <Input disabled={disabled} className="border-amber-400" />
           </Form.Item>
         </Col>
-          <Col span={4}>
+        <Col span={4}>
           <Form.Item label="GSTIN" name="gstIn">
             <Input disabled={disabled} className="border-amber-400" />
           </Form.Item>
         </Col>
-          <Col span={4}>
+        <Col span={4}>
           <Form.Item label="ET No" name="etno">
             <Input disabled={disabled} className="border-amber-400" />
           </Form.Item>
         </Col>
- <Col span={4}>
+        <Col span={4}>
           <Form.Item label="ET Date" name="etDate">
-           <DatePicker
-          className="w-full"
-          disabledDate={(current) => current && current < dayjs().startOf("day")}
-        />  </Form.Item>
+            <DatePicker
+              className="w-full"
+              disabled={disabled}
+              format="DD:MM:YYYY"     />{" "}
+          </Form.Item>
         </Col>
-          <Col span={4}>
+        <Col span={4}>
           <Form.Item label="CST No" name="cstNo">
             <Input disabled={disabled} className="border-amber-400" />
           </Form.Item>
         </Col>
-          <Col span={4}>
-           <Form.Item label="CST Date" name="cstDate">
-           <DatePicker
-          className="w-full"
-          disabledDate={(current) => current && current < dayjs().startOf("day")}
-        />  </Form.Item>
+        <Col span={4}>
+          <Form.Item label="CST Date" name="cstDate">
+            <DatePicker
+              className="w-full"
+              disabled={disabled}
+              format="DD:MM:YYYY"  />{" "}
+          </Form.Item>
         </Col>
-          <Col span={4}>
+        <Col span={4}>
           <Form.Item label="Trade No" name="tradeNo">
             <Input disabled={disabled} className="border-amber-400" />
           </Form.Item>
         </Col>
-         <Col span={4}>
+        <Col span={4}>
           <Form.Item label="Website / URL (if any)" name="websiteUrl">
             <Input disabled={disabled} className="border-amber-400" />
           </Form.Item>
         </Col>
-        
+
         <Col span={4}>
           <Form.Item label="Email" name="email">
             <Input disabled={disabled} className="border-amber-400" />
@@ -570,12 +626,22 @@ export default function Business() {
         </Col>
         <Col span={4}>
           <Form.Item label="State" name="state">
-            <Select disabled={disabled} className="border-amber-400">
-              <Select.Option value="Madhya Pradesh">Madhya Pradesh</Select.Option>
-              <Select.Option value="Maharashtra">Maharashtra</Select.Option>
-              <Select.Option value="Odisha">Odisha</Select.Option>
-              <Select.Option value="Delhi">Delhi</Select.Option>
-            </Select>
+            <Input disabled={disabled} placeholder="Enter State" />
+          </Form.Item>
+        </Col>
+        <Col span={4}>
+          <Form.Item label="District" name="district">
+            <Input disabled={disabled} placeholder="Enter District" />
+          </Form.Item>
+        </Col>
+        <Col span={4}>
+          <Form.Item label="City" name="city">
+            <Input disabled={disabled} placeholder="Enter City" />
+          </Form.Item>
+        </Col>
+        <Col span={4}>
+          <Form.Item label="Pin Code" name="pinCode">
+            <Input disabled={disabled} placeholder="Enter Pin Code" />
           </Form.Item>
         </Col>
         <Col span={4}>
@@ -597,122 +663,153 @@ export default function Business() {
       <h3 className="text-lg font-semibold text-amber-700 mt-4 mb-2">
         Plant Details
       </h3>
-
-      <Form.List name="plants">
-        {(fields, { add, remove }) => (
-          <>
-            {fields.map(({ key, name, fieldKey, ...restField }, index) => (
-              <Card
-                key={key}
-                title={
-                  <span className="text-amber-700">
-                    Plant {index + 1}
-                  </span>
-                }
-                extra={
-                  !disabled && (
-                    <MinusCircleOutlined
-                      onClick={() => remove(name)}
-                      className="text-red-500 hover:text-red-700"
-                    />
-                  )
-                }
-                style={{ marginBottom: 16, border: '1px solid #ffc877' }}
-              >
-                <Row gutter={24}>
-                  <Col span={4}>
-                    <Form.Item
-                      {...restField}
-                      name={[name, 'plantName']}
-                      fieldKey={[fieldKey, 'plantName']}
-                      label="Plant Name"
-                      rules={[{ required: true, message: 'Missing Plant Name' }]}
-                    >
-                      <Input disabled={disabled} placeholder="Enter Plant Name" />
-                    </Form.Item>
-                  </Col>
-                  <Col span={4}>
-                    <Form.Item
-                      {...restField}
-                      name={[name, 'address']}
-                      fieldKey={[fieldKey, 'address']}
-                      label="Address"
-                    >
-                      <Input disabled={disabled} placeholder="Enter Plant Address" />
-                    </Form.Item>
-                  </Col>
-                  <Col span={4}>
-                    <Form.Item
-                      {...restField}
-                      name={[name, 'phoneNo']}
-                      fieldKey={[fieldKey, 'phoneNo']}
-                      label="Phone No"
-                    >
-                      <Input disabled={disabled} placeholder="Enter Phone Number" />
-                    </Form.Item>
-                  </Col>
-                  <Col span={4}>
-                    <Form.Item
-                      {...restField}
-                      name={[name, 'email']}
-                      fieldKey={[fieldKey, 'email']}
-                      label="Email"
-                    >
-                      <Input disabled={disabled} placeholder="Enter Email" />
-                    </Form.Item>
-                  </Col>
-                  <Col span={4}>
-                    <Form.Item
-                      {...restField}
-                      name={[name, 'state']}
-                      fieldKey={[fieldKey, 'state']}
-                      label="State"
-                    >
-                      <Input disabled={disabled} placeholder="Enter State" />
-                    </Form.Item>
-                  </Col>
-                  <Col span={4}>
-                    <Form.Item
-                      {...restField}
-                      name={[name, 'faxNo']}
-                      fieldKey={[fieldKey, 'faxNo']}
-                      label="Fax No"
-                    >
-                      <Input disabled={disabled} placeholder="Enter Fax No" />
-                    </Form.Item>
-                  </Col>
-                </Row>
-              </Card>
-            ))}
-
-            {!disabled && (
-              <Form.Item>
-                <Button
-                  type="dashed"
-                  onClick={() => add()}
-                  block
-                  icon={<PlusOutlined />}
-                  className="border-amber-400 text-amber-700 hover:bg-amber-100"
+      <div className="max-h-60 overflow-y-auto pr-4">
+        <Form.List name="plants">
+          {(fields, { add, remove }) => (
+            <>
+              {fields.map(({ key, name, fieldKey, ...restField }, index) => (
+                <Card
+                  key={key}
+                  title={
+                    <span className="text-amber-700">Plant {index + 1}</span>
+                  }
+                  extra={
+                    !disabled && (
+                      <MinusCircleOutlined
+                        onClick={() => remove(name)}
+                        className="text-red-500 hover:text-red-700"
+                      />
+                    )
+                  }
+                  style={{ marginBottom: 16, border: "1px solid #ffc877" }}
                 >
-                  Add Plant
-                </Button>
-              </Form.Item>
-            )}
-          </>
-        )}
-      </Form.List>
+                  <Row gutter={24}>
+                    <Col span={4}>
+                      <Form.Item
+                        {...restField}
+                        name={[name, "plantName"]}
+                        fieldKey={[fieldKey, "plantName"]}
+                        label="Plant Name"
+                        rules={[
+                          { required: true, message: "Missing Plant Name" },
+                        ]}
+                      >
+                        <Input disabled={disabled} placeholder="Enter Plant Name" />
+                      </Form.Item>
+                    </Col>
+                    <Col span={4}>
+                      <Form.Item
+                        {...restField}
+                        name={[name, "address"]}
+                        fieldKey={[fieldKey, "address"]}
+                        label="Address"
+                      >
+                        <Input disabled={disabled} placeholder="Enter Plant Address" />
+                      </Form.Item>
+                    </Col>
+                    <Col span={4}>
+                      <Form.Item
+                        {...restField}
+                        name={[name, "phoneNo"]}
+                        fieldKey={[fieldKey, "phoneNo"]}
+                        label="Phone No"
+                      >
+                        <Input disabled={disabled} placeholder="Enter Phone Number" />
+                      </Form.Item>
+                    </Col>
+                    <Col span={4}>
+                      <Form.Item
+                        {...restField}
+                        name={[name, "email"]}
+                        fieldKey={[fieldKey, "email"]}
+                        label="Email"
+                      >
+                        <Input disabled={disabled} placeholder="Enter Email" />
+                      </Form.Item>
+                    </Col>
+                    <Col span={4}>
+                      <Form.Item
+                        {...restField}
+                        name={[name, "state"]}
+                        fieldKey={[fieldKey, "state"]}
+                        label="State"
+                      >
+                        <Input disabled={disabled} placeholder="Enter State" />
+                      </Form.Item>
+                    </Col>
+
+                    <Col span={4}>
+                      <Form.Item
+                        {...restField}
+                        name={[name, "district"]}
+                        fieldKey={[fieldKey, "district"]}
+                        label="District"
+                      >
+                        <Input disabled={disabled} placeholder="Enter District" />
+                      </Form.Item>
+                    </Col>
+                    <Col span={4}>
+                      <Form.Item
+                        {...restField}
+                        name={[name, "city"]}
+                        fieldKey={[fieldKey, "city"]}
+                        label="City"
+                      >
+                        <Input disabled={disabled} placeholder="Enter City" />
+                      </Form.Item>
+                    </Col>
+                    <Col span={4}>
+                      <Form.Item
+                        {...restField}
+                        name={[name, "pin"]}
+                        fieldKey={[fieldKey, "pin"]}
+                        label="Pin"
+                      >
+                        <Input disabled={disabled} placeholder="Enter Pin" />
+                      </Form.Item>
+                    </Col>
+                    <Col span={4}>
+                      <Form.Item
+                        {...restField}
+                        name={[name, "faxNo"]}
+                        fieldKey={[fieldKey, "faxNo"]}
+                        label="Fax No"
+                      >
+                        <Input disabled={disabled} placeholder="Enter Fax No" />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                </Card>
+              ))}
+
+              {!disabled && (
+                <Form.Item>
+                  <Button
+                    type="dashed"
+                    onClick={() => add()}
+                    block
+                    icon={<PlusOutlined />}
+                    className="border-amber-400 text-amber-700 hover:bg-amber-100"
+                  >
+                    Add Plant
+                  </Button>
+                </Form.Item>
+              )}
+            </>
+          )}
+        </Form.List>
+      </div>
     </>
   );
 
   // ================= Component Render =================
   return (
     <div>
-      {/* ===== Search & Add ===== */}
       <div className="flex justify-between items-center mb-2">
         <div className="flex gap-2">
           <Input
             prefix={<SearchOutlined className="text-amber-600" />}
-            placeholder="Search..."
+            placeholder="Search by Name or Email..."
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
             className="w-64 border-amber-300"
@@ -722,8 +819,16 @@ export default function Business() {
             onClick={() => setSearchText("")}
             className="border-amber-400 text-amber-700 hover:bg-amber-100"
           >
-            Reset
+            Reset Search
           </Button>
+          <Select
+            value={activeForm}
+            onChange={(value) => setActiveForm(value)}
+            className="w-40 border-amber-300"
+          >
+            <Option value="Customer">Customer</Option>
+            <Option value="Vendor">Vendor</Option>
+          </Select>
         </div>
         <div className="flex gap-2">
           <Button
@@ -736,9 +841,9 @@ export default function Business() {
             type="primary"
             icon={<PlusOutlined />}
             onClick={() => {
-              setSelectedRecord(null);
-              setActiveForm("Customer"); // Default to Customer on Add
-              form.resetFields();
+              setSelectedRecord(null); 
+              setActiveForm("Customer"); 
+              form.resetFields(); 
               setIsEditModalOpen(true);
             }}
             className="bg-amber-500 hover:bg-amber-600 border-none "
@@ -748,24 +853,24 @@ export default function Business() {
         </div>
       </div>
 
-      {/* ===== Table ===== */}
       <div className="border border-amber-300 rounded-lg p-4 shadow-md">
         <h2 className="text-lg font-semibold text-amber-700 mb-0">
           Business Partner Master Records
         </h2>
         <p className="text-amber-600 mb-3">
-          Manage all Customer & Vendor data in one place
+          Showing {activeForm} records. Manage all Customer & Vendor data in one place
         </p>
         <Table
           columns={columns}
-          dataSource={filteredData}
+          dataSource={filteredData.filter(
+            (item) => item.partnerType === activeForm
+          )} 
           pagination={false}
-          scroll={{ y: 250 }}
+          scroll={{ y: 350 }}
           className="custom-scroll-table"
         />
       </div>
 
-      {/* ===== Modal (Add/Edit/View) ===== */}
       <Modal
         title={
           <span className="text-amber-700 font-semibold">
@@ -777,14 +882,15 @@ export default function Business() {
         onCancel={() => {
           setIsEditModalOpen(false);
           setIsViewModalOpen(false);
-
+          setSelectedRecord(null); 
+          form.resetFields(); 
+          viewForm.resetFields(); 
         }}
         footer={null}
-        width={1200} 
-        style={{ top: 20 }} 
+        width={1200}
+        style={{ top: 20 }}
       >
-
-        {!selectedRecord && (
+        {!selectedRecord && !isViewModalOpen && (
           <div className="flex gap-2 mb-4">
             <Button
               type={activeForm === "Customer" ? "primary" : "default"}
@@ -794,8 +900,8 @@ export default function Business() {
               }}
               className={`border border-amber-400 ${
                 activeForm === "Customer"
-                  ? "bg-amber-500 text-amber-900"
-                  : "text-amber-700 bg-white"
+                  ? "bg-amber-500 text-amber-900 hover:bg-amber-600"
+                  : "text-amber-700 bg-white hover:bg-amber-100"
               }`}
             >
               Customer
@@ -808,8 +914,8 @@ export default function Business() {
               }}
               className={`border border-amber-400 ${
                 activeForm === "Vendor"
-                  ? "bg-amber-500 text-amber-900"
-                  : "text-amber-700 bg-white"
+                  ? "bg-amber-500 text-amber-900 hover:bg-amber-600"
+                  : "text-amber-700 bg-white hover:bg-amber-100"
               }`}
             >
               Vendor
@@ -821,14 +927,12 @@ export default function Business() {
           layout="vertical"
           form={isViewModalOpen ? viewForm : form}
           onFinish={handleSave}
-          // The scroll-y-auto class is for the content *inside* the modal
-          className="max-h-[70vh] overflow-y-auto pr-4 custom-scroll-form" 
+          className="max-h-[70vh] overflow-y-auto pr-4 custom-scroll-form"
         >
           {activeForm === "Customer"
             ? renderCustomerForm(isViewModalOpen)
             : renderVendorForm(isViewModalOpen)}
 
-          {/* Form Actions */}
           {!isViewModalOpen && (
             <div className="flex justify-end gap-2 mt-4">
               <Button
@@ -848,9 +952,6 @@ export default function Business() {
           )}
         </Form>
       </Modal>
-      
-      
-     
     </div>
   );
 }
