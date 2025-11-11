@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom scrollbar (optional) */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 8px;
+}
+
+.ant-menu-item-selected {
+  background-color: transparent !important;  
+  color: #b45309 !important; 
+}
+
+.ant-menu-item:hover {
+  background-color: #fef3c7 !important;
+}
