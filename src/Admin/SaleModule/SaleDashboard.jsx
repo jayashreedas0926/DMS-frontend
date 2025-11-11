@@ -76,6 +76,12 @@ const saleDashboardJSON = {
     { name: "Wrong Item", value: 1 },
     { name: "Other Reasons", value: 4 },
   ],
+  dummydata: [
+    { name: "Damaged", value: 3 },
+    { name: "Expired", value: 2 },
+    { name: "Wrong Item", value: 1 },
+    { name: "Other Reasons", value: 4 },
+  ],
   COLORS: ["#d97706", "#f59e0b", "#fbbf24", "#fcd34d"],
   quickActions: [
     {
